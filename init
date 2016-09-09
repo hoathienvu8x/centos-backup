@@ -1,2 +1,67 @@
 #!/bin/bash
+QUIET=0
+HUMAN_READABLE_SIZE=1
 
+function utime() {
+	echo $(date +%s)
+}
+
+function convert_bytes() {
+	if [[ $HUMAN_READABLE_SIZE == 1 ]]; then
+	if (($1 > 1073741824));then
+	    echo $(($1/1073741824)).$(($1%1073741824/100000000))"G";
+	elif (($1 > 1048576));then
+	    echo $(($1/1048576)).$(($1%1048576/100000))"M";
+	elif (($1 > 1024));then
+	    echo $(($1/1024)).$(($1%1024/100))"K";
+	else
+	    echo $1;
+	fi
+    else
+	echo $1;
+    fi
+}
+
+function file_size() {
+	#Generic GNU
+    SIZE=$(stat --format="%s" "$1" 2> /dev/null)
+    if [ $? -eq 0 ]; then
+        echo $SIZE
+        return
+    fi   
+
+    #Some embedded linux devices
+    SIZE=$(stat -c "%s" "$1" 2> /dev/null)
+    if [ $? -eq 0 ]; then
+        echo $SIZE
+        return
+    fi
+
+    #BSD, OSX and other OSs
+    SIZE=$(stat -f "%z" "$1" 2> /dev/null)
+    if [ $? -eq 0 ]; then
+        echo $SIZE
+        return
+    fi
+
+    echo "0"
+}
+
+function urlencode() {
+	builtin printf "" 2> /dev/null
+	if [[ $? == 0 ]]; then
+		PRINTF="builtin printf"
+		PRINTF_OPT="-v o"
+	else
+		PRINTF=$(which printf)
+		if [[ $? != 0 ]]; then
+			echo -e "Error: Required program could not be found: printf"
+		fi
+		PRINTF_OPT=""
+	fi
+	
+}
+
+function print() {
+	echo -ne "$1";
+}
