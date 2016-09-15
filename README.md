@@ -27,3 +27,19 @@ Then give the execution permission to script and run it:
 $chmod +x centos-backup/api
 $sh centos-backup/api
 ```
+
+To edit or create your own crontab file, type the following command at the UNIX / Linux shell prompt:
+
+```bash
+$ crontab -e
+```
+
+Append the following entry:
+
+```bash
+0 5 * * * sh /path/to/api
+```
+
+Save and close the file.
+
+This command is run script every day on 5h am
