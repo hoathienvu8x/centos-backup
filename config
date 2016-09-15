@@ -1,2 +1,12 @@
-#!/bin/bash
+#!/bin/sh
+APP_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+BAKCUP_DIR="/home/allbackup"
+DB_USER="root"
+DB_PASSWD=""
+
+RECIVER_MAIL=""
+
+HUMAN_READABLE_SIZE=1
+
+APP_VERSION="1.0.0"

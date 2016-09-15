@@ -1,0 +1,22 @@
+#!/bin/sh
+
+Reciver=$1
+Subject=$2
+Text=$3
+
+USERNAME="Centos Backup App"
+Sender="no-reply@$HOSTNAME"
+
+Mail_text="Subject: [Backup Notification] $Subject\nFrom: $USERNAME <$Sender>\nTo: $Reciver\nMIME-Version: 1.0\nContent-Type: text/html\n\n<p style=\"color:red;font-weight:bold;\">$Text</p>"
+
+echo -e $Mail_text | sendmail -t
+
+RetVal=$?
+
+if [[ $RetVal -eq 0 ]]; then
+	echo "Send to mail success !"
+else
+	echo "Send mail failed !"
+fi
+
+exit

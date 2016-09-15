@@ -1,2 +1,43 @@
 #!/bin/bash
 
+. $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/config
+. $APP_DIR/init
+
+if ls /tmp/backup\.temp\.* 1> /dev/null 2>&1; then
+	cd /tmp/backup.temp.*
+	TMP_DIR=$( pwd )
+	cd $APP_DIR
+else
+	TMP_DIR="/tmp/backup.temp.$RANDOM"
+	mkdir $TMP_DIR
+fi
+
+DATABASES=()
+
+MAIL_CONTENT_HTML=""
+CURDATE=$(date +"%F_%H%M%S")
+
+for dbname in "${DATABASES[@]}"
+do
+	if [ -f /var/lib/mysql/$dbname/db.opt ]; then
+		FileName="$dbname-$CURDATE.sql.gz"
+		mysqldump -u $DB_USER -p$DB_PASSWD --add-drop-database $dbname | gzip -9 > $TMP_DIR/$FileName
+		FileSize=$(file_size "$TMP_DIR/$FileName")
+		SizeDisplay=$(convert_bytes "$FileSize")
+		MAIL_CONTENT_HTML+="<div style=\"margin:0 0 10px;width:100%;word-break:break-word;clear:left;font-size:15px;line-height:18px;color:#555549;min-height:36px\">\n\t\tTập tin: <strong>$FileName</strong> ($SizeDisplay) đã được tạo lúc <span style=\"color:orange;\">`date +"%F %T"`</span>\n\t</div><hr style=\"border:none;border-bottom:1px solid #ececec;margin:1.5rem 0;width:100%\">"
+	fi
+done
+
+if [[ $MAIL_CONTENT_HTML != "" ]]; then
+	cd $TMP_DIR
+	FileName="backup-$CURDATE.tar.gz"
+	tar cpzf $BAKCUP_DIR/$FileName *
+	FileSize=$(file_size "$BAKCUP_DIR/$FileName")
+	SizeDisplay=$(convert_bytes "$FileSize")
+	ALL_BACKUP_GZIP="<div style=\"margin:0 0 10px;width:100%;word-break:break-word;clear:left;font-size:15px;line-height:18px;color:#555549;min-height:36px\">\n\t\tTập tin: <strong>$FileName</strong> ($SizeDisplay) đã được tạo lúc <span style=\"color:orange;\">`date +"%F %T"`</span> lưu trữ tại thư mục <span style=\"color:#fff;\">$BAKCUP_DIR/$FileName</span>\n\t</div>"
+	MAIL_CONTENT_HTML="<div style=\"max-width:600px;margin:0 auto\">\n\t<h2 style=\"color:#2ab27b;line-height:30px;margin-bottom:12px;margin:0 0 12px\">Chào Trần Ngọc Nhật,</h2>\n\t<p style=\"font-size:17px;line-height:24px;margin:0 0 16px\">Bạn có một thông báo mới từ hệ thống sao lưu</p>\n\t<hr style=\"border:none;border-bottom:1px solid #ececec;margin:1.5rem 0;width:100%\">\n\t<h3 style=\"color:#2ab27b;line-height:18px;margin-bottom:12px;font-size:18px;margin:0 0 8px\">Thông tin chi tiết như sau:</h3>\n\t$MAIL_CONTENT_HTML\n\t$ALL_BACKUP_GZIP\n\t<p style=\"font-size:12px;line-height:20px;margin:0 0 16px;margin-top:16px;text-align:center;\">\n\t\tPhiên bản sao lưu <strong>$APP_VERSION</strong><br />\n\t\tNgười tạo: <strong>Trần Ngọc Nhật</strong> &lt;anhchangthode22145&gt;\n\t</p>\n</div>"
+	. $APP_DIR/sendmail "$RECIVER_MAIL" "Sao lưu dữ liệu đã sẵn sàng" "$MAIL_CONTENT_HTML"
+	rm -rf $TMP_DIR/*
+fi
+
+exit $?
